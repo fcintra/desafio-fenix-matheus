@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\SubmitExamDTO;
 use App\Models\Alternative;
 use App\Models\Attempt;
 use App\Models\Exam;
@@ -10,18 +11,18 @@ use Illuminate\Support\Facades\Redis;
 
 class ExamScoringService
 {
-    public function process(User $user, Exam $exam, array $answers): Attempt
+    public function process(SubmitExamDTO $dto): Attempt
     {
-        [$score, $percentage] = $this->calculateScore($exam, $answers);
+        [$score, $percentage] = $this->calculateScore($dto->exam, $dto->answers);
 
         $attempt = Attempt::create([
-            'user_id'    => $user->id,
-            'exam_id'    => $exam->id,
+            'user_id'    => $dto->user->id,
+            'exam_id'    => $dto->exam->id,
             'score'      => $score,
             'percentage' => $percentage,
         ]);
 
-        $this->updateRanking($user, $exam, $percentage);
+        $this->updateRanking($dto->user, $dto->exam, $percentage);
 
         return $attempt->load('exam', 'user');
     }

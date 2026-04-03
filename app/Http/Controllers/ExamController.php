@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\CreateExamDTO;
+use App\DTOs\SubmitExamDTO;
 use App\Http\Requests\StoreExamRequest;
 use App\Http\Requests\SubmitExamRequest;
 use App\Http\Resources\AttemptResource;
@@ -44,18 +46,18 @@ class ExamController extends Controller
 
     public function store(StoreExamRequest $request): ExamResource
     {
-        $exam = $this->examService->create($request->validated());
+        $exam = $this->examService->create(CreateExamDTO::fromArray($request->validated()));
 
         return new ExamResource($exam);
     }
 
     public function submit(SubmitExamRequest $request, Exam $exam): AttemptResource
     {
-        $attempt = $this->scoringService->process(
+        $attempt = $this->scoringService->process(new SubmitExamDTO(
             user:    $request->user(),
             exam:    $exam,
             answers: $request->validated()['answers'],
-        );
+        ));
 
         return new AttemptResource($attempt);
     }

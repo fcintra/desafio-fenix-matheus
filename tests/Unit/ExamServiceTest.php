@@ -1,5 +1,8 @@
 <?php
 
+use App\DTOs\AlternativeDTO;
+use App\DTOs\CreateExamDTO;
+use App\DTOs\QuestionDTO;
 use App\Services\ExamService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -9,8 +12,9 @@ beforeEach(function (): void {
     $this->service = app(ExamService::class);
 });
 
-it('creates an exam with questions and alternatives', function (): void {
-    $exam = $this->service->create([
+function makeCreateExamDTO(array $overrides = []): CreateExamDTO
+{
+    return CreateExamDTO::fromArray(array_merge([
         'title'       => 'Prova de PHP',
         'description' => 'Fundamentos',
         'questions'   => [
@@ -22,7 +26,11 @@ it('creates an exam with questions and alternatives', function (): void {
                 ],
             ],
         ],
-    ]);
+    ], $overrides));
+}
+
+it('creates an exam with questions and alternatives', function (): void {
+    $exam = $this->service->create(makeCreateExamDTO());
 
     expect($exam->title)->toBe('Prova de PHP')
         ->and($exam->questions)->toHaveCount(1)
@@ -30,24 +38,27 @@ it('creates an exam with questions and alternatives', function (): void {
 });
 
 it('creates an exam without description', function (): void {
-    $exam = $this->service->create([
-        'title'     => 'Sem descrição',
-        'questions' => [
-            [
-                'text'         => 'Questão única',
-                'alternatives' => [
-                    ['text' => 'Certa', 'is_correct' => true],
-                    ['text' => 'Errada', 'is_correct' => false],
+    $dto = new CreateExamDTO(
+        title: 'Sem descrição',
+        description: null,
+        questions: [
+            new QuestionDTO(
+                text: 'Questão única',
+                alternatives: [
+                    new AlternativeDTO(text: 'Certa', isCorrect: true),
+                    new AlternativeDTO(text: 'Errada', isCorrect: false),
                 ],
-            ],
+            ),
         ],
-    ]);
+    );
+
+    $exam = $this->service->create($dto);
 
     expect($exam->description)->toBeNull();
 });
 
 it('persists the exam and its relations in the database', function (): void {
-    $this->service->create([
+    $this->service->create(CreateExamDTO::fromArray([
         'title'     => 'Prova persistida',
         'questions' => [
             [
@@ -58,7 +69,7 @@ it('persists the exam and its relations in the database', function (): void {
                 ],
             ],
         ],
-    ]);
+    ]));
 
     expect(\App\Models\Exam::where('title', 'Prova persistida')->exists())->toBeTrue()
         ->and(\App\Models\Question::where('text', 'Questão A')->exists())->toBeTrue()
@@ -66,7 +77,7 @@ it('persists the exam and its relations in the database', function (): void {
 });
 
 it('creates multiple questions with their alternatives', function (): void {
-    $exam = $this->service->create([
+    $exam = $this->service->create(CreateExamDTO::fromArray([
         'title'     => 'Multi questões',
         'questions' => [
             [
@@ -85,25 +96,14 @@ it('creates multiple questions with their alternatives', function (): void {
                 ],
             ],
         ],
-    ]);
+    ]));
 
     expect($exam->questions)->toHaveCount(2)
         ->and($exam->questions->last()->alternatives)->toHaveCount(3);
 });
 
 it('loads questions and alternatives on the returned exam', function (): void {
-    $exam = $this->service->create([
-        'title'     => 'Com relações',
-        'questions' => [
-            [
-                'text'         => 'Q',
-                'alternatives' => [
-                    ['text' => 'X', 'is_correct' => true],
-                    ['text' => 'Y', 'is_correct' => false],
-                ],
-            ],
-        ],
-    ]);
+    $exam = $this->service->create(makeCreateExamDTO(['title' => 'Com relações']));
 
     expect($exam->relationLoaded('questions'))->toBeTrue()
         ->and($exam->questions->first()->relationLoaded('alternatives'))->toBeTrue();

@@ -2,26 +2,27 @@
 
 namespace App\Services;
 
+use App\DTOs\CreateExamDTO;
 use App\Models\Exam;
 use Illuminate\Support\Facades\DB;
 
 class ExamService
 {
-    public function create(array $data): Exam
+    public function create(CreateExamDTO $dto): Exam
     {
-        return DB::transaction(function () use ($data): Exam {
+        return DB::transaction(function () use ($dto): Exam {
             $exam = Exam::create([
-                'title'       => $data['title'],
-                'description' => $data['description'] ?? null,
+                'title'       => $dto->title,
+                'description' => $dto->description,
             ]);
 
-            foreach ($data['questions'] as $questionData) {
-                $question = $exam->questions()->create(['text' => $questionData['text']]);
+            foreach ($dto->questions as $questionDTO) {
+                $question = $exam->questions()->create(['text' => $questionDTO->text]);
 
-                foreach ($questionData['alternatives'] as $altData) {
+                foreach ($questionDTO->alternatives as $alternativeDTO) {
                     $question->alternatives()->create([
-                        'text'       => $altData['text'],
-                        'is_correct' => $altData['is_correct'],
+                        'text'       => $alternativeDTO->text,
+                        'is_correct' => $alternativeDTO->isCorrect,
                     ]);
                 }
             }
