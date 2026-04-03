@@ -18,8 +18,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: pdo, pdo_sqlite, sqlite3
-          coverage: none
+          extensions: pdo, pdo_sqlite, sqlite3, pcov
+          coverage: pcov
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,4 +39,4 @@ jobs:
           php artisan key:generate
 
       - name: Run tests
-        run: php vendor/bin/pest --ci
+        run: php vendor/bin/pest --ci --coverage --min=80
