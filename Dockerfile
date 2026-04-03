@@ -15,6 +15,8 @@ RUN docker-php-ext-install pdo pdo_pgsql zip bcmath pcntl
 
 RUN pecl install redis && docker-php-ext-enable redis
 
+RUN pecl install pcov && docker-php-ext-enable pcov
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
