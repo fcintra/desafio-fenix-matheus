@@ -7,6 +7,8 @@ services:
       - "5173:5173"
     volumes:
       - .:/var/www/html
+      - vendor:/var/www/html/vendor
+      - node_modules:/var/www/html/node_modules
     env_file:
       - .env
     environment:
@@ -48,3 +50,5 @@ services:
 
 volumes:
   pgdata:
+  vendor:
+  node_modules:
