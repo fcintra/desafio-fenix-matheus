@@ -86,7 +86,6 @@ it('ignores answers for questions not in the exam', function () {
 
     $correct = Alternative::factory()->correct()->create(['question_id' => $q->id]);
 
-    // answer has extra key that doesn't belong to the exam
     $attempt = $this->service->process($user, $exam, [
         $q->id => $correct->id,
         9999   => 8888,

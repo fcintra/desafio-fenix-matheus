@@ -7,12 +7,6 @@ use App\Models\Question;
 use App\Models\User;
 use Illuminate\Support\Facades\Redis;
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-/**
- * Build an exam with one question and two alternatives.
- * Returns [$exam, $question, $correct, $wrong].
- */
 function makeExamWithQuestion(): array
 {
     $exam    = Exam::factory()->create();
@@ -22,8 +16,6 @@ function makeExamWithQuestion(): array
 
     return [$exam, $q, $correct, $wrong];
 }
-
-// ─── submit endpoint ─────────────────────────────────────────────────────────
 
 it('requires authentication to submit an exam', function () {
     $exam = Exam::factory()->create();
@@ -130,8 +122,6 @@ it('returns 422 when an alternative id does not exist', function () {
         ->assertJsonValidationErrors('answers.1');
 });
 
-// ─── exam ranking endpoint ────────────────────────────────────────────────────
-
 it('requires authentication to view the exam ranking', function () {
     $exam = Exam::factory()->create();
 
@@ -169,8 +159,6 @@ it('returns an empty leaderboard when no attempts exist', function () {
         ->assertOk()
         ->assertJsonPath('data.leaderboard', []);
 });
-
-// ─── global ranking endpoint ──────────────────────────────────────────────────
 
 it('requires authentication to view the global ranking', function () {
     $this->getJson('/api/ranking')

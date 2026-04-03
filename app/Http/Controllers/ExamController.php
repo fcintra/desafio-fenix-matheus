@@ -9,14 +9,17 @@ use App\Http\Resources\ExamResource;
 use App\Models\Attempt;
 use App\Models\Exam;
 use App\Services\ExamScoringService;
+use App\Services\ExamService;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class ExamController extends Controller
 {
-    public function __construct(private readonly ExamScoringService $scoringService) {}
+    public function __construct(
+        private readonly ExamScoringService $scoringService,
+        private readonly ExamService $examService,
+    ) {}
 
     public function index(Request $request): JsonResource
     {
@@ -41,22 +44,7 @@ class ExamController extends Controller
 
     public function store(StoreExamRequest $request): ExamResource
     {
-        $exam = DB::transaction(function () use ($request): Exam {
-            $exam = Exam::create($request->only('title', 'description'));
-
-            foreach ($request->validated()['questions'] as $questionData) {
-                $question = $exam->questions()->create(['text' => $questionData['text']]);
-
-                foreach ($questionData['alternatives'] as $altData) {
-                    $question->alternatives()->create([
-                        'text'       => $altData['text'],
-                        'is_correct' => $altData['is_correct'],
-                    ]);
-                }
-            }
-
-            return $exam->load('questions.alternatives');
-        });
+        $exam = $this->examService->create($request->validated());
 
         return new ExamResource($exam);
     }
