@@ -1,58 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Fenix Exams
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação Full Stack moderna de sistema de provas online, desenvolvida como desafio técnico. Permite que professores criem provas com questões e alternativas, e que alunos as respondam, acumulando pontuação em rankings individuais e globais via Redis.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Destaques Técnicos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Camada | Tecnologia |
+|---|---|
+| Backend | Laravel 11 · PHP 8.4 |
+| Frontend | Vue 3 · Vite · Tailwind CSS |
+| Banco de dados | PostgreSQL 16 |
+| Cache / Rankings | Redis 7 |
+| Autenticação | Laravel Sanctum |
+| Infraestrutura | Docker · Docker Compose |
+| Testes | Pest 4 |
+| CI | GitHub Actions |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Arquitetura
 
-## Learning Laravel
+O backend segue uma arquitetura em camadas bem definidas:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- **Controllers** — responsáveis apenas por receber a requisição, delegar e retornar o Resource.
+- **DTOs (Data Transfer Objects)** — `CreateExamDTO`, `SubmitExamDTO` e nested DTOs (`QuestionDTO`, `AlternativeDTO`) garantem tipagem forte e desacoplamento entre as camadas.
+- **Services** — `ExamService` encapsula a criação de provas em transação atômica; `ExamScoringService` cuida do cálculo de pontuação e atualização dos rankings no Redis.
+- **Form Requests** — validação e autorização isoladas do controller.
+- **API Resources** — transformação de resposta padronizada.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 🚀 Quick Start
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+> Pré-requisitos: Docker e Docker Compose instalados.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cp .env.example .env && docker-compose up -d --build && docker exec fenix_app composer install && docker exec fenix_app php artisan key:generate && docker exec fenix_app php artisan migrate --seed
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+A aplicação estará disponível em **http://localhost:8080**.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🐳 Containers Docker
 
-## Code of Conduct
+| Container | Imagem | Porta | Função |
+|---|---|---|---|
+| `fenix_app` | Dockerfile local (PHP 8.4-FPM) | `8080` | Aplicação Laravel + Vite dev server (`5173`) |
+| `fenix_db` | `postgres:16-alpine` | `5432` | Banco de dados principal |
+| `fenix_redis` | `redis:7-alpine` | `6379` | Rankings em tempo real e cache |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 🧪 Qualidade e Testes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+O projeto possui **84% de cobertura de código** verificada com Pest e um pipeline de CI configurado no GitHub Actions que valida automaticamente cada push e pull request na branch `main`.
 
-## License
+**Rodar os testes com cobertura:**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+docker exec fenix_app php vendor/bin/pest --coverage
+```
+
+**Rodar apenas os testes:**
+
+```bash
+docker exec fenix_app php vendor/bin/pest
+```
+
+---
+
+## 🛠️ Makefile
+
+Para facilitar operações comuns dentro do container:
+
+```bash
+make setup
+```
+
+Executa `composer install`, `npm install`, `key:generate` e `migrate` de uma vez.
