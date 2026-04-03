@@ -39,7 +39,7 @@ it('submits an exam and returns 201 with the attempt resource', function () {
     [$exam, $q, $correct] = makeExamWithQuestion();
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)
+    $response = $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", [
             'answers' => [$q->id => $correct->id],
         ]);
@@ -68,7 +68,7 @@ it('stores the attempt in the database after submission', function () {
     [$exam, $q, $correct] = makeExamWithQuestion();
     $user = User::factory()->create();
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", [
             'answers' => [$q->id => $correct->id],
         ]);
@@ -92,7 +92,7 @@ it('returns 422 when the user has already attempted the exam', function () {
         'percentage' => 100.0,
     ]);
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", [
             'answers' => [$q->id => $correct->id],
         ])
@@ -104,7 +104,7 @@ it('returns 422 when answers field is missing', function () {
     $exam = Exam::factory()->create();
     $user = User::factory()->create();
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", [])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('answers');
@@ -114,7 +114,7 @@ it('returns 422 when answers array is empty', function () {
     $exam = Exam::factory()->create();
     $user = User::factory()->create();
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", ['answers' => []])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('answers');
@@ -124,7 +124,7 @@ it('returns 422 when an alternative id does not exist', function () {
     $exam = Exam::factory()->create();
     $user = User::factory()->create();
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->postJson("/api/exams/{$exam->id}/submit", ['answers' => [1 => 99999]])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('answers.1');
@@ -148,7 +148,7 @@ it('returns the exam ranking leaderboard', function () {
         ->with("exam:{$exam->id}:ranking", 0, 9, ['withscores' => true])
         ->andReturn([(string) $user->id => '85.50']);
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->getJson("/api/exams/{$exam->id}/ranking")
         ->assertOk()
         ->assertJsonPath('data.exam.id', $exam->id)
@@ -164,7 +164,7 @@ it('returns an empty leaderboard when no attempts exist', function () {
         ->once()
         ->andReturn([]);
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->getJson("/api/exams/{$exam->id}/ranking")
         ->assertOk()
         ->assertJsonPath('data.leaderboard', []);
@@ -185,7 +185,7 @@ it('returns the global ranking leaderboard', function () {
         ->with('student_ranking', 0, 9, ['withscores' => true])
         ->andReturn([(string) $user->id => '250.00']);
 
-    $this->actingAs($user)
+    $this->actingAs($user, 'sanctum')
         ->getJson('/api/ranking')
         ->assertOk()
         ->assertJsonPath('data.leaderboard.0.user_id', $user->id)

@@ -2,16 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreExamRequest;
 use App\Http\Requests\SubmitExamRequest;
 use App\Http\Resources\AttemptResource;
+use App\Http\Resources\ExamResource;
+use App\Models\Attempt;
 use App\Models\Exam;
 use App\Services\ExamScoringService;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
 class ExamController extends Controller
 {
     public function __construct(private readonly ExamScoringService $scoringService) {}
+
+    public function index(Request $request): JsonResource
+    {
+        $userId = $request->user()->id;
+
+        $attemptedIds = Attempt::where('user_id', $userId)->pluck('exam_id');
+
+        $exams = Exam::withCount('questions')->latest()->get()
+            ->each(function (Exam $exam) use ($attemptedIds): void {
+                $exam->has_attempted = $attemptedIds->contains($exam->id);
+            });
+
+        return ExamResource::collection($exams);
+    }
+
+    public function show(Exam $exam): ExamResource
+    {
+        $exam->load('questions.alternatives');
+
+        return new ExamResource($exam);
+    }
+
+    public function store(StoreExamRequest $request): ExamResource
+    {
+        $exam = DB::transaction(function () use ($request): Exam {
+            $exam = Exam::create($request->only('title', 'description'));
+
+            foreach ($request->validated()['questions'] as $questionData) {
+                $question = $exam->questions()->create(['text' => $questionData['text']]);
+
+                foreach ($questionData['alternatives'] as $altData) {
+                    $question->alternatives()->create([
+                        'text'       => $altData['text'],
+                        'is_correct' => $altData['is_correct'],
+                    ]);
+                }
+            }
+
+            return $exam->load('questions.alternatives');
+        });
+
+        return new ExamResource($exam);
+    }
 
     public function submit(SubmitExamRequest $request, Exam $exam): AttemptResource
     {
