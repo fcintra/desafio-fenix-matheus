@@ -5,3 +5,6 @@ setup:
 	$(APP) npm install
 	$(APP) php artisan key:generate
 	$(APP) php artisan migrate --force
+
+swagger:
+	$(APP) php artisan l5-swagger:generate

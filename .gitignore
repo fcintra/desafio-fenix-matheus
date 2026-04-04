@@ -25,4 +25,5 @@ Homestead.yaml
 Thumbs.db
 /coverage
 /storage/coverage
+/storage/api-docs
 *.html
